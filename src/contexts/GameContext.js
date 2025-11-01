@@ -28,14 +28,17 @@ function gameReducer(state, action) {
       const newCompletedLevels = [...state.completedLevels, levelId];
       const totalPoints = score + timeBonus + (perfect ? 15 : 0);
       
-      // Calculate new island and level
+      // Calculate new island and level - simple mapping
       let newLevel = state.currentLevel + 1;
       let newIsland = state.currentIsland;
       
-      if (newLevel > 10) {
-        newLevel = 10; // Max level
-      } else if (newLevel % 2 === 1 && newLevel > 2) {
-        newIsland = Math.ceil(newLevel / 2);
+      if (newLevel > 2) {
+        newLevel = 2; // Max level for now (since we only have 2 islands)
+      }
+      
+      // Simple island mapping: Level 1 = Island 1, Level 2 = Island 2
+      if (newLevel === 2) {
+        newIsland = 2;
       }
       
       return {

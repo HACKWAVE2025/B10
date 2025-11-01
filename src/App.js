@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import './App.css';
 import GameIntro from './components/GameIntro';
 import GamePlay from './components/GamePlay';
+import IslandSelector from './components/IslandSelector';
 import Leaderboard from './components/Leaderboard';
 import { GameProvider } from './contexts/GameContext';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState('intro'); // intro, game, leaderboard
+  const [currentScreen, setCurrentScreen] = useState('intro'); // intro, game, islands, leaderboard
   const [dogName, setDogName] = useState('');
 
   const startGame = (name) => {
     setDogName(name);
     setCurrentScreen('game');
+  };
+
+  const startIslandMode = (name) => {
+    setDogName(name);
+    setCurrentScreen('islands');
   };
 
   const showLeaderboard = () => {
@@ -25,6 +31,11 @@ function App() {
   const resetGame = () => {
     setCurrentScreen('intro');
     setDogName('');
+  };
+
+  const handleIslandGameComplete = (result) => {
+    // For now, just stay in island mode
+    console.log('Island game completed:', result);
   };
 
   return (
@@ -41,7 +52,7 @@ function App() {
           </header>
 
           {currentScreen === 'intro' && (
-            <GameIntro onStartGame={startGame} />
+            <GameIntro onStartGame={startGame} onStartIslandMode={startIslandMode} />
           )}
 
           {currentScreen === 'game' && (
@@ -49,6 +60,14 @@ function App() {
               dogName={dogName} 
               onShowLeaderboard={showLeaderboard}
               onResetGame={resetGame}
+            />
+          )}
+
+          {currentScreen === 'islands' && (
+            <IslandSelector
+              dogName={dogName}
+              onGameComplete={handleIslandGameComplete}
+              onReturnToMap={resetGame}
             />
           )}
 

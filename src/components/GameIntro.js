@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 
-function GameIntro({ onStartGame }) {
+function GameIntro({ onStartGame, onStartIslandMode }) {
   const [dogName, setDogName] = useState('');
   const [showStory, setShowStory] = useState(false);
 
   const handleStartGame = () => {
     if (dogName.trim()) {
       onStartGame(dogName.trim());
+    }
+  };
+
+  const handleStartIslandMode = () => {
+    if (dogName.trim()) {
+      onStartIslandMode(dogName.trim());
     }
   };
 
@@ -69,13 +75,28 @@ function GameIntro({ onStartGame }) {
               />
             </div>
 
-            <button
-              onClick={handleStartGame}
-              disabled={!dogName.trim()}
-              className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              Start Training {dogName && `${dogName}!`} 🚀
-            </button>
+            <div className="space-y-4">
+              <button
+                onClick={handleStartGame}
+                disabled={!dogName.trim()}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                📚 Start Story Mode {dogName && `${dogName}!`} 🚀
+              </button>
+              
+              <button
+                onClick={handleStartIslandMode}
+                disabled={!dogName.trim()}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-purple-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                🏝️ Island Training Mode {dogName && `${dogName}!`} ⚡
+              </button>
+              
+              <div className="text-center text-sm text-gray-600 mt-2">
+                <p className="mb-1">🎯 <strong>Story Mode:</strong> Progressive levels with story</p>
+                <p>🏝️ <strong>Island Mode:</strong> Free access to all islands (Development)</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

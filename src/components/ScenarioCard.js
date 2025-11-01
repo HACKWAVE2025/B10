@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import MiniGameComponent from './MiniGameComponent';
 
 function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
   const [selectedChoice, setSelectedChoice] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showMiniGame, setShowMiniGame] = useState(true);
   const [startTime, setStartTime] = useState(null);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [allChoicesCorrect, setAllChoicesCorrect] = useState(true);
+  const [miniGameCompleted, setMiniGameCompleted] = useState(false);
+  const [miniGameResult, setMiniGameResult] = useState(null);
 
   useEffect(() => {
     setStartTime(Date.now());
@@ -13,16 +17,33 @@ function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
     setShowFeedback(false);
     setAllChoicesCorrect(true);
     setTimeElapsed(0);
+    setShowMiniGame(true);
+    setMiniGameCompleted(false);
+    setMiniGameResult(null);
   }, [scenario]);
 
   useEffect(() => {
-    if (startTime && !showFeedback) {
+    if (startTime && !showFeedback && !showMiniGame) {
       const interval = setInterval(() => {
         setTimeElapsed(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [startTime, showFeedback]);
+  }, [startTime, showFeedback, showMiniGame]);
+
+  const handleMiniGameComplete = (result) => {
+    setMiniGameResult(result);
+    setMiniGameCompleted(true);
+    setShowMiniGame(false);
+    setStartTime(Date.now()); // Reset timer for quiz portion
+  };
+
+  const handleSkipMiniGame = (result) => {
+    setMiniGameResult(result);
+    setMiniGameCompleted(true);
+    setShowMiniGame(false);
+    setStartTime(Date.now()); // Reset timer for quiz portion
+  };
 
   const handleChoiceClick = (choiceIndex) => {
     if (showFeedback) return;
@@ -44,11 +65,18 @@ function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
     }
 
     setTimeout(() => {
+      const quizScore = isCorrect ? 10 : -5;
+      const miniGameBonus = miniGameResult?.passed ? miniGameResult.score : 0;
+      const totalScore = quizScore + miniGameBonus;
+
       const levelResult = {
         correct: isCorrect,
         timeBonus,
         perfect: allChoicesCorrect && isCorrect,
-        responseTime
+        responseTime,
+        miniGameBonus,
+        totalScore,
+        miniGameResult
       };
       onComplete(levelResult);
     }, 3000);
@@ -73,6 +101,18 @@ function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
       : `${baseClass} bg-gray-100 border-gray-300 text-gray-600`;
   };
 
+  // Show mini-game first
+  if (showMiniGame) {
+    return (
+      <MiniGameComponent
+        island={scenario.island}
+        onGameComplete={handleMiniGameComplete}
+        onSkipGame={handleSkipMiniGame}
+        dogName={dogName}
+      />
+    );
+  }
+
   return (
     <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
       {/* Level Header */}
@@ -88,6 +128,20 @@ function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
         <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
           {scenario.title}
         </h2>
+        
+        {/* Mini-game completion status */}
+        {miniGameCompleted && (
+          <div className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold ${
+            miniGameResult?.passed 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {miniGameResult?.passed ? '🎮✅ Mini-game completed!' : '🎮⏭️ Mini-game skipped'}
+            {miniGameResult?.score > 0 && (
+              <span className="ml-2">+{miniGameResult.score} bonus points</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Scenario */}
@@ -176,6 +230,11 @@ function ScenarioCard({ scenario, onComplete, onWrongAnswer, dogName }) {
               ? '🎉 Well done! Moving to next level...' 
               : '💪 Learning experience! Next level coming up...'}
           </div>
+          {miniGameResult?.score > 0 && (
+            <div className="text-sm text-green-600 mt-2">
+              Mini-game bonus: +{miniGameResult.score} points
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -17,8 +17,8 @@ function GamePlay({ dogName, onShowLeaderboard, onResetGame }) {
     const scenario = gameScenarios.find(s => s.level === currentLevel);
     setCurrentScenario(scenario);
 
-    // Check if game is complete
-    if (currentLevel > 10) {
+    // Check if game is complete - we now have 2 islands, so complete after island 2
+    if (currentLevel > 2) {
       setGameComplete(true);
       setTimeout(() => setShowFinalAttack(true), 1000);
     }

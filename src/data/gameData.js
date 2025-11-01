@@ -28,7 +28,7 @@ export const gameScenarios = [
   },
   {
     id: 2,
-    island: 1,
+    island: 2,
     level: 2,
     title: "QR Code Trap",
     scenario: "You see a QR code poster saying 'Scan to get ₹100 cashback!' outside a shop.",
@@ -271,17 +271,10 @@ export const gameScenarios = [
 ];
 
 export const islands = [
-  { id: 1, name: "Basics Island", theme: "🏝️ Foundation", levels: [1, 2] },
-  { id: 2, name: "Communication Cove", theme: "📱 Messages & Calls", levels: [3, 4] },
-  { id: 3, name: "Money Mountain", theme: "💰 Financial Offers", levels: [5, 6] },
-  { id: 4, name: "Investment Isle", theme: "📈 Investments & Loans", levels: [7, 8] },
-  { id: 5, name: "Shopping Shore", theme: "🛒 E-commerce & Security", levels: [9, 10] }
+  { id: 1, name: "Cyber Defense Island", theme: "🛡️ Scam Detection", levels: [1] },
+  { id: 2, name: "Network Security Station", theme: "🔒 IT Security", levels: [2] }
 ];
 
 export const dogEvolution = [
-  { level: 1, emoji: "🐶", name: "Puppy Detective" },
-  { level: 3, emoji: "🐕", name: "Alert Guardian" },
-  { level: 5, emoji: "🦮", name: "Cyber Sentinel" },
-  { level: 7, emoji: "🐕‍🦺", name: "Fraud Hunter" },
-  { level: 10, emoji: "🦸‍♂️🐕", name: "Security Hero" }
+  { level: 1, emoji: "�️‍♂️", name: "Cyber Agent" }
 ];
