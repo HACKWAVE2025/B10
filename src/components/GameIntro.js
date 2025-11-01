@@ -1,0 +1,135 @@
+import React, { useState } from 'react';
+
+function GameIntro({ onStartGame }) {
+  const [dogName, setDogName] = useState('');
+  const [showStory, setShowStory] = useState(false);
+
+  const handleStartGame = () => {
+    if (dogName.trim()) {
+      onStartGame(dogName.trim());
+    }
+  };
+
+  if (showStory) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+          <div className="text-center mb-8">
+            <div className="text-8xl mb-4">🐕</div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              The Story Begins...
+            </h2>
+          </div>
+          
+          <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
+            <p>
+              🌅 One sunny morning, while walking through the digital district, you discover a lost puppy. 
+              The poor little one seems confused by all the online scams and fraudulent messages floating around!
+            </p>
+            <p>
+              💡 You realize this puppy has a special talent - it can sense digital fraud! 
+              With your guidance, this furry friend could become the ultimate cyber security companion.
+            </p>
+            <p>
+              🎯 Your mission: Train your new companion to detect and bark at 10 different types of 
+              digital payment frauds across 5 mysterious islands. Each island holds new challenges!
+            </p>
+            <p>
+              ⭐ As you progress, your dog will evolve and grow stronger. After mastering all levels, 
+              your trained guardian will protect you from real cyber threats!
+            </p>
+          </div>
+
+          <div className="mt-8 text-center">
+            <div className="bg-blue-50 p-6 rounded-lg mb-6">
+              <h3 className="text-xl font-semibold text-blue-800 mb-3">
+                🏆 Scoring System
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div>✅ Correct Choice: <span className="font-bold text-green-600">+10 points</span></div>
+                <div>❌ Wrong Choice: <span className="font-bold text-red-600">-5 points</span></div>
+                <div>🎯 Level Completion: <span className="font-bold text-blue-600">+5 points</span></div>
+                <div>⚡ Quick Answer (&lt;10s): <span className="font-bold text-purple-600">+2 points</span></div>
+                <div>💎 Perfect Level: <span className="font-bold text-yellow-600">+15 points</span></div>
+                <div>🆘 3 Lives per game</div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xl font-semibold text-gray-800 mb-3">
+                Give your cyber-detective companion a name:
+              </label>
+              <input
+                type="text"
+                value={dogName}
+                onChange={(e) => setDogName(e.target.value)}
+                placeholder="Enter your dog's name..."
+                className="w-full max-w-md mx-auto px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                maxLength="20"
+              />
+            </div>
+
+            <button
+              onClick={handleStartGame}
+              disabled={!dogName.trim()}
+              className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              Start Training {dogName && `${dogName}!`} 🚀
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto text-center">
+      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+        <div className="mb-8">
+          <div className="text-9xl mb-6 animate-bounce-slow">🐕</div>
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">
+            Welcome to Fraud Detection Academy!
+          </h2>
+          <p className="text-xl text-gray-600 leading-relaxed">
+            Embark on an adventure to train your digital companion in detecting cyber frauds. 
+            Journey through 5 islands, master 10 scenarios, and become a fraud-fighting duo!
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <button
+            onClick={() => setShowStory(true)}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200"
+          >
+            🌟 Begin Your Journey
+          </button>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-3xl mb-2">🏝️</div>
+              <h3 className="font-semibold text-blue-800">5 Islands</h3>
+              <p className="text-sm text-blue-600">Each with unique fraud scenarios</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-3xl mb-2">🎯</div>
+              <h3 className="font-semibold text-green-800">10 Levels</h3>
+              <p className="text-sm text-green-600">Real-world fraud examples</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-3xl mb-2">📱</div>
+              <h3 className="font-semibold text-purple-800">Mobile Friendly</h3>
+              <p className="text-sm text-purple-600">Play anywhere, anytime</p>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-3xl mb-2">🏆</div>
+              <h3 className="font-semibold text-yellow-800">Leaderboard</h3>
+              <p className="text-sm text-yellow-600">Compete with others</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default GameIntro;

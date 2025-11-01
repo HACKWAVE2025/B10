@@ -18,6 +18,9 @@
 .env.test.local
 .env.production.local
 
+# GitHub Copilot instructions
+.github/copilot-instructions.md
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
