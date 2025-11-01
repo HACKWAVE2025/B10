@@ -6,6 +6,7 @@ A fun and interactive web application where users train their virtual dog compan
 
 **Fraud Detection Academy** is a hackathon project designed to educate users about digital payment security through gamification. Players adopt a virtual dog and train it to recognize various fraud patterns, creating an engaging learning experience around cybersecurity awareness.
 
+
 ## 🌟 Features
 
 
