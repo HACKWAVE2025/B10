@@ -8,6 +8,7 @@ A fun and interactive web application where users train their virtual dog compan
 
 ## 🌟 Features
 
+
 ### 🎮 Core Gameplay
 - **Virtual Dog Companion**: Name and train your cyber-detective dog
 - **10 Fraud Scenarios**: Real-world examples across different categories
