@@ -17,6 +17,8 @@ class Block {
     this.isTrap = isTrap;
     this.speed = speed; // Use the passed speed parameter
     this.direction = 1;
+    this.dropY = y; // Current drop position (for falling animation)
+    this.isDropping = false; // Whether the block is currently dropping
     
     if (isTrap) {
       this.text = TRAP_BLOCK_MESSAGES[Math.floor(Math.random() * TRAP_BLOCK_MESSAGES.length)];
@@ -26,36 +28,50 @@ class Block {
   }
 
   draw(ctx) {
-    ctx.fillStyle = this.isTrap ? '#e53e3e' : '#48bb78';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    ctx.fillStyle = '#4A90E2'; // Same blue color for both
+    const drawY = this.isDropping ? this.dropY : this.y;
+    ctx.fillRect(this.x, drawY, this.width, this.height);
     
     ctx.fillStyle = 'white';
     ctx.font = 'bold 12px Inter';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(this.text, this.x + this.width / 2, this.y + this.height / 2);
+    ctx.fillText(this.text, this.x + this.width / 2, drawY + this.height / 2);
   }
   
   drawStatic(ctx, offsetY) {
-    ctx.fillStyle = this.isTrap ? '#e53e3e' : '#48bb78';
-    ctx.fillRect(this.x, this.y - offsetY, this.width, this.height);
+    ctx.fillStyle = '#4A90E2'; // Same blue color for both
+    const drawY = this.isDropping ? this.dropY : this.y;
+    ctx.fillRect(this.x, drawY - offsetY, this.width, this.height);
     
     ctx.fillStyle = 'white';
     ctx.font = 'bold 12px Inter';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(this.text, this.x + this.width / 2, this.y - offsetY + this.height / 2);
+    ctx.fillText(this.text, this.x + this.width / 2, drawY - offsetY + this.height / 2);
   }
 
   update() {
-    this.x += this.speed * this.direction;
-    if (this.x + this.width > 500) {
-      this.direction = -1;
-      this.x = 500 - this.width;
-    }
-    if (this.x < 0) {
-      this.direction = 1;
-      this.x = 0;
+    if (this.isDropping) {
+      // Drop from top with gravity-like effect
+      this.dropY += this.speed * 2; // Drop faster for better gameplay
+      
+      // Check if block has reached its target position
+      if (this.dropY >= this.y) {
+        this.dropY = this.y;
+        this.isDropping = false;
+      }
+    } else {
+      // Original side-to-side movement (only when not dropping)
+      this.x += this.speed * this.direction;
+      if (this.x + this.width > 500) {
+        this.direction = -1;
+        this.x = 500 - this.width;
+      }
+      if (this.x < 0) {
+        this.direction = 1;
+        this.x = 0;
+      }
     }
   }
 }
@@ -99,7 +115,6 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [creditScore, setCreditScore] = useState(700);
-  const [blockSpeed, setBlockSpeed] = useState(2);
   
   // Game objects refs
   const towerRef = useRef([]);
@@ -107,23 +122,110 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
   const cameraYRef = useRef(0);
   const platformRef = useRef(null);
 
+  // Audio system
+  const audioContext = useRef(null);
+  const [audioEnabled] = useState(true);
+
+  // Initialize audio context
+  const initAudio = useCallback(() => {
+    if (!audioContext.current) {
+      audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }, []);
+
+  // Audio system for Credit Stacker Game
+  const playSound = useCallback((type) => {
+    if (!audioEnabled || !audioContext.current) return;
+
+    const ctx = audioContext.current;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    switch (type) {
+      case 'block-stack':
+        // Successful block stacking - positive building sound
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime); // A4
+        oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.2); // E5
+        gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.3);
+        break;
+      
+      case 'trap-discard':
+        // Successfully discarding a trap - rewarding sound
+        oscillator.frequency.setValueAtTime(330, ctx.currentTime); // E4
+        oscillator.frequency.exponentialRampToValueAtTime(550, ctx.currentTime + 0.15); // C#5
+        gainNode.gain.setValueAtTime(0.12, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.25);
+        break;
+
+      case 'trap-stack':
+        // Accidentally stacking a trap - negative sound
+        oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.4);
+        gainNode.gain.setValueAtTime(0.18, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.5);
+        break;
+
+      case 'life-lost':
+        // Life lost - dramatic descending sound
+        oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.6);
+        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.7);
+        break;
+
+      case 'block-drop':
+        // Block falling/dropping sound
+        oscillator.frequency.setValueAtTime(220, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.15);
+        break;
+
+      default:
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.1);
+    }
+  }, [audioEnabled]);
+
   const spawnNewBlock = useCallback(() => {
     const lastY = towerRef.current.length > 0 ? towerRef.current[towerRef.current.length - 1].y : platformRef.current.y;
     const lastWidth = towerRef.current.length > 0 ? towerRef.current[towerRef.current.length - 1].width : platformRef.current.width;
     
     const isTrap = Math.random() < 0.25;
     
-    // Progressive speed increase: base speed + tower height * 0.3
-    const currentSpeed = 2 + (towerRef.current.length * 0.3);
-    setBlockSpeed(currentSpeed);
+    // More gradual progressive speed increase: base speed + tower height * 0.1 (reduced from 0.3)
+    const currentSpeed = 1 + (towerRef.current.length * 0.1);
     
+    // Create block that drops from top instead of moving side to side
     movingBlockRef.current = new Block(lastY - BLOCK_HEIGHT, lastWidth, isTrap, score, currentSpeed);
-    movingBlockRef.current.x = 0;
+    movingBlockRef.current.x = Math.random() * (500 - lastWidth); // Random horizontal position
+    movingBlockRef.current.dropY = -50; // Start above the screen
+    movingBlockRef.current.isDropping = true; // Flag to indicate it's dropping
+    
+    // Play block drop sound
+    playSound('block-drop');
     
     if (towerRef.current.length > 3) {
       cameraYRef.current = (towerRef.current.length - 3) * BLOCK_HEIGHT;
     }
-  }, [score]);
+  }, [score, playSound]);
 
   const dropBlock = useCallback(() => {
     if (gameState !== 'playing' || !movingBlockRef.current) return;
@@ -137,6 +239,8 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
 
     if (overlap > 0) {
       if (movingBlockRef.current.isTrap) {
+        // Play trap stacking sound (negative)
+        playSound('trap-stack');
         setCreditScore(prev => {
           const newScore = Math.max(0, prev - CREDIT_PENALTY);
           if (newScore <= 0) {
@@ -149,6 +253,9 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
         return;
       }
 
+      // Play successful block stacking sound
+      playSound('block-stack');
+      
       const newWidth = overlap;
       const newX = Math.max(movingBlockRef.current.x, lastBlock.x);
       
@@ -160,6 +267,8 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
       setScore(prev => prev + 10);
       spawnNewBlock();
     } else {
+      // Play life lost sound
+      playSound('life-lost');
       setLives(prev => {
         const newLives = prev - 1;
         if (newLives <= 0) {
@@ -169,7 +278,7 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
       });
       spawnNewBlock();
     }
-  }, [gameState, spawnNewBlock]);
+  }, [gameState, spawnNewBlock, playSound]);
 
   // New function to discard/skip the current block
   const discardBlock = useCallback(() => {
@@ -177,14 +286,16 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
     
     // If it's a trap block, give bonus points for discarding it
     if (movingBlockRef.current.isTrap) {
+      playSound('trap-discard'); // Positive sound for discarding trap
       setScore(prev => prev + 25); // Bonus for avoiding trap
     } else {
+      playSound('life-lost'); // Negative sound for discarding good block
       // Small penalty for discarding a good block
       setScore(prev => Math.max(0, prev - 5));
     }
     
     spawnNewBlock();
-  }, [gameState, spawnNewBlock]);
+  }, [gameState, spawnNewBlock, playSound]);
 
   const gameLoop = useCallback(() => {
     if (gameState !== 'playing') return;
@@ -213,18 +324,20 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
   }, [gameState]);
 
   const startGame = useCallback(() => {
+    // Initialize audio context on user interaction
+    initAudio();
+    
     towerRef.current = [];
     cameraYRef.current = 0;
     setScore(0);
     setLives(3);
     setCreditScore(MAX_CREDIT_SCORE);
-    setBlockSpeed(2); // Reset block speed to initial value
     setGameState('playing');
     platformRef.current = new Platform();
     
     spawnNewBlock();
     gameLoop();
-  }, [spawnNewBlock, gameLoop]);
+  }, [spawnNewBlock, gameLoop, initAudio]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === ' ' || e.key === 'Enter') {
@@ -275,8 +388,8 @@ const CreditStackerGame = ({ onGameComplete, dogName, island, theme }) => {
         title: "Credit Ruined!",
         headline: "APPLICATION DENIED",
         details: "Your credit score is too low. You failed to qualify for a car loan and were denied an apartment lease.",
-        color: "text-red-500",
-        border: "border-red-500"
+        color: "text-blue-500",
+        border: "border-blue-500"
       };
     } else if (creditScore < 500) {
       return {

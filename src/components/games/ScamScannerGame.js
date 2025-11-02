@@ -22,13 +22,237 @@ const itemData = [
 const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
   const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'over'
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(20);
   const [items, setItems] = useState([]);
   const [speed, setSpeed] = useState(10); // Animation duration in seconds
-  const [spawnRate, setSpawnRate] = useState(2000); // Spawn interval in ms
+  const [spawnRate, setSpawnRate] = useState(3000); // Spawn interval in ms - increased for better spacing
   const itemCounter = useRef(0);
   const timerInterval = useRef(null);
   const spawnInterval = useRef(null);
+  
+  // Audio system
+  const audioContext = useRef(null);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const backgroundMusic = useRef(null);
+  const bgGainNode = useRef(null);
+
+  // Initialize audio context
+  const initAudio = useCallback(() => {
+    if (!audioContext.current) {
+      audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }, []);
+
+  // Generate audio tones for different actions
+  const playSound = useCallback((type) => {
+    if (!audioEnabled || !audioContext.current) return;
+
+    const ctx = audioContext.current;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    switch (type) {
+      case 'correct':
+        // Success sound - ascending tone
+        oscillator.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        oscillator.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.3);
+        break;
+      
+      case 'incorrect':
+        // Error sound - descending tone
+        oscillator.frequency.setValueAtTime(415.30, ctx.currentTime); // G#4
+        oscillator.frequency.exponentialRampToValueAtTime(277.18, ctx.currentTime + 0.3); // C#4
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.4);
+        break;
+      
+      case 'spawn':
+        // Item spawn sound - quick beep
+        oscillator.frequency.setValueAtTime(880, ctx.currentTime); // A5
+        gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.1);
+        break;
+      
+      case 'warning':
+        // Warning sound for missed scam
+        oscillator.frequency.setValueAtTime(220, ctx.currentTime); // A3
+        gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.5);
+        break;
+      
+      case 'gameStart':
+        // Game start sound - power-up
+        oscillator.frequency.setValueAtTime(261.63, ctx.currentTime); // C4
+        oscillator.frequency.exponentialRampToValueAtTime(523.25, ctx.currentTime + 0.5); // C5
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.6);
+        break;
+      
+      case 'gameEnd':
+        // Game end sound - completion fanfare
+        const playNote = (freq, delay, duration = 0.2) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+          gain.gain.setValueAtTime(0.08, ctx.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration);
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + duration);
+        };
+        
+        playNote(523.25, 0);    // C5
+        playNote(659.25, 0.15); // E5
+        playNote(783.99, 0.3);  // G5
+        playNote(1046.50, 0.45); // C6
+        break;
+      
+      default:
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.2);
+    }
+  }, [audioEnabled]);
+
+  // Background music cleanup function
+  const stopBackgroundMusic = useCallback(() => {
+    if (backgroundMusic.current) {
+      try {
+        backgroundMusic.current.oscillators.forEach(osc => {
+          try {
+            osc.stop();
+          } catch (e) {
+            // Oscillator might already be stopped
+          }
+        });
+      } catch (e) {
+        // Handle any errors during cleanup
+      }
+      backgroundMusic.current = null;
+    }
+    if (bgGainNode.current) {
+      try {
+        bgGainNode.current.disconnect();
+      } catch (e) {
+        // Node might already be disconnected
+      }
+      bgGainNode.current = null;
+    }
+  }, []);
+
+  // Background music system - creates ambient cybersecurity-themed music
+  const createBackgroundMusic = useCallback(() => {
+    if (!audioEnabled || !audioContext.current || backgroundMusic.current) return;
+
+    const ctx = audioContext.current;
+    
+    // Create main gain node for background music
+    bgGainNode.current = ctx.createGain();
+    bgGainNode.current.gain.setValueAtTime(0.03, ctx.currentTime); // Low volume for background
+    bgGainNode.current.connect(ctx.destination);
+
+    // Create a complex ambient sound using multiple oscillators
+    const createAmbientLoop = () => {
+      // Bass drone
+      const bassOsc = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bassOsc.frequency.setValueAtTime(55, ctx.currentTime); // A1
+      bassGain.gain.setValueAtTime(0.3, ctx.currentTime);
+      bassOsc.connect(bassGain);
+      bassGain.connect(bgGainNode.current);
+      bassOsc.start();
+
+      // Mid-range pulse
+      const midOsc = ctx.createOscillator();
+      const midGain = ctx.createGain();
+      midOsc.frequency.setValueAtTime(220, ctx.currentTime); // A3
+      midGain.gain.setValueAtTime(0, ctx.currentTime);
+      
+      // Create pulsing effect
+      const pulseDuration = 2; // 2 seconds per pulse
+      let currentTime = ctx.currentTime;
+      for (let i = 0; i < 50; i++) { // Create 50 pulses (100 seconds of music)
+        midGain.gain.setValueAtTime(0, currentTime + i * pulseDuration);
+        midGain.gain.linearRampToValueAtTime(0.15, currentTime + i * pulseDuration + 0.1);
+        midGain.gain.linearRampToValueAtTime(0, currentTime + i * pulseDuration + 0.3);
+      }
+      
+      midOsc.connect(midGain);
+      midGain.connect(bgGainNode.current);
+      midOsc.start();
+
+      // High frequency sparkle
+      const hiOsc = ctx.createOscillator();
+      const hiGain = ctx.createGain();
+      hiOsc.frequency.setValueAtTime(1760, ctx.currentTime); // A6
+      hiGain.gain.setValueAtTime(0, ctx.currentTime);
+      
+      // Create sparkle effect - random sparkles
+      currentTime = ctx.currentTime;
+      for (let i = 0; i < 30; i++) {
+        const sparkleTime = currentTime + Math.random() * 100; // Random times over 100 seconds
+        hiGain.gain.setValueAtTime(0, sparkleTime);
+        hiGain.gain.linearRampToValueAtTime(0.08, sparkleTime + 0.05);
+        hiGain.gain.linearRampToValueAtTime(0, sparkleTime + 0.2);
+      }
+      
+      hiOsc.connect(hiGain);
+      hiGain.connect(bgGainNode.current);
+      hiOsc.start();
+
+      // Store references for cleanup
+      backgroundMusic.current = {
+        oscillators: [bassOsc, midOsc, hiOsc],
+        gainNodes: [bassGain, midGain, hiGain]
+      };
+
+      // Stop all oscillators after 100 seconds and restart
+      setTimeout(() => {
+        if (backgroundMusic.current && audioEnabled) {
+          stopBackgroundMusic();
+          createAmbientLoop(); // Restart the loop
+        }
+      }, 100000);
+    };
+
+    createAmbientLoop();
+  }, [audioEnabled, stopBackgroundMusic]);
+
+  const toggleAudio = useCallback(() => {
+    setAudioEnabled(prev => {
+      const newState = !prev;
+      if (!newState) {
+        // Turning off audio
+        stopBackgroundMusic();
+      } else {
+        // Turning on audio
+        setTimeout(() => {
+          if (gameState === 'playing') {
+            createBackgroundMusic();
+          }
+        }, 100);
+      }
+      return newState;
+    });
+  }, [gameState, createBackgroundMusic, stopBackgroundMusic]);
 
   // Generate random item
   const spawnItem = useCallback(() => {
@@ -46,32 +270,47 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
     };
 
     setItems(prev => [...prev, newItem]);
+    
+    // Play spawn sound
+    playSound('spawn');
 
     // Remove item after animation completes (if not dropped)
     setTimeout(() => {
       setItems(prev => {
         const stillExists = prev.find(i => i.id === newItem.id);
         if (stillExists && stillExists.isScam) {
-          // Missed a scam item - penalize
+          // Missed a scam item - penalize and play warning sound
           setScore(s => Math.max(0, s - 100));
+          playSound('warning');
         }
         return prev.filter(i => i.id !== newItem.id);
       });
     }, speed * 1000);
-  }, [gameState, speed]);
+  }, [gameState, speed, playSound]);
 
   // Start game
   const startGame = () => {
+    // Initialize audio context on user interaction
+    initAudio();
+    
     setGameState('playing');
     setScore(0);
-    setTimeLeft(60);
+    setTimeLeft(20);
     setItems([]);
     setSpeed(10);
-    setSpawnRate(2000);
+    setSpawnRate(3000);
     itemCounter.current = 0;
 
+    // Play game start sound
+    playSound('gameStart');
+    
+    // Start background music
+    setTimeout(() => {
+      createBackgroundMusic();
+    }, 500); // Small delay to let the start sound play first
+
     // Start spawning items
-    spawnInterval.current = setInterval(spawnItem, 2000);
+    spawnInterval.current = setInterval(spawnItem, 3000);
 
     // Start game timer
     timerInterval.current = setInterval(() => {
@@ -92,9 +331,15 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
     clearInterval(timerInterval.current);
     setItems([]);
 
+    // Stop background music
+    stopBackgroundMusic();
+
+    // Play game end sound
+    playSound('gameEnd');
+
     // Complete game after showing results
     setTimeout(() => {
-      const passed = score >= 300; // Need at least 300 points to pass
+      const passed = score >= 200; // Need at least 200 points to pass (adjusted for 20 second timer)
       onGameComplete({
         passed,
         score,
@@ -104,14 +349,14 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
     }, 3000);
   };
 
-  // Update speed based on score
+  // Update speed based on score - maintaining better spacing
   useEffect(() => {
-    if (score > 1500) {
-      setSpeed(5);
-      setSpawnRate(1000);
-    } else if (score > 500) {
-      setSpeed(7);
-      setSpawnRate(1500);
+    if (score > 1000) {
+      setSpeed(6);
+      setSpawnRate(2000); // Faster but still spaced
+    } else if (score > 400) {
+      setSpeed(8);
+      setSpawnRate(2500); // Moderate speed
     }
   }, [score]);
 
@@ -132,8 +377,10 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
     
     if (isCorrect) {
       setScore(prev => prev + 100);
+      playSound('correct');
     } else {
       setScore(prev => Math.max(0, prev - 50));
+      playSound('incorrect');
     }
 
     // Remove the item
@@ -161,15 +408,16 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
     return () => {
       clearInterval(spawnInterval.current);
       clearInterval(timerInterval.current);
+      stopBackgroundMusic();
     };
-  }, []);
+  }, [stopBackgroundMusic]);
 
   if (gameState === 'start') {
     return (
       <div 
         className="min-h-screen flex items-center justify-center p-4 text-white"
         style={{ 
-          background: 'linear-gradient(135deg, #8B0000, #DC143C, #B22222)',
+          background: 'linear-gradient(135deg, #2C5282, #4A90E2, #63B3ED)',
           backgroundImage: `
             radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
             radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
@@ -180,7 +428,6 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
         <div className="text-center max-w-2xl relative">
           {/* Scam-themed decorative elements */}
           <div className="absolute -top-10 -left-10 text-4xl opacity-30 animate-pulse">⚠️</div>
-          <div className="absolute -top-5 -right-15 text-3xl opacity-20 animate-bounce">�</div>
           <div className="absolute -bottom-10 -left-5 text-2xl opacity-25">🔒</div>
           <div className="absolute -bottom-5 -right-10 text-3xl opacity-30">🛡️</div>
           
@@ -190,12 +437,12 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
             <h1 className="text-6xl font-bold mb-2 text-yellow-300 drop-shadow-lg">
               SCAM SCANNER
             </h1>
-            <div className="text-2xl text-red-300 font-semibold">
+            <div className="text-2xl text-blue-300 font-semibold">
               ⚡ FRAUD DETECTION UNIT ⚡
             </div>
           </div>
           
-          <p className="text-gray-200 text-xl mb-8 bg-black bg-opacity-30 p-4 rounded-lg border border-red-400">
+          <p className="text-gray-200 text-xl mb-8 bg-black bg-opacity-30 p-4 rounded-lg border border-blue-400">
             <span className="text-yellow-400">⚠️ MISSION BRIEFING:</span><br/>
             Malicious emails and messages detected! Sort them into SAFE or SCAM bins before they infiltrate the system!
           </p>
@@ -209,14 +456,14 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
           
           <button
             onClick={startGame}
-            className="bg-gradient-to-r from-red-600 to-red-800 text-white font-bold py-4 px-10 rounded-lg shadow-2xl text-2xl hover:from-red-700 hover:to-red-900 transition duration-300 border-2 border-yellow-400 transform hover:scale-105"
+            className="bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold py-4 px-10 rounded-lg shadow-2xl text-2xl hover:from-blue-700 hover:to-blue-900 transition duration-300 border-2 border-blue-400 transform hover:scale-105"
           >
             🚀 DEPLOY SCANNER
           </button>
           
           {/* Bottom warning */}
           <div className="mt-6 text-sm text-yellow-300 animate-pulse">
-            🔥 HIGH THREAT LEVEL - IMMEDIATE ACTION REQUIRED 🔥
+            ⚠️ REVIEW REQUIRED - ANALYZE CAREFULLY ⚠️
           </div>
         </div>
       </div>
@@ -228,9 +475,9 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
       <div 
         className="min-h-screen flex items-center justify-center p-4 text-white"
         style={{ 
-          background: score >= 300 
-            ? 'linear-gradient(135deg, #0F5132, #198754, #20C997)' 
-            : 'linear-gradient(135deg, #8B0000, #DC143C, #B22222)',
+          background: score >= 200 
+            ? 'linear-gradient(135deg, #2C5282, #4A90E2, #63B3ED)' 
+            : 'linear-gradient(135deg, #2C5282, #4A90E2, #63B3ED)',
           backgroundImage: `
             radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%),
             radial-gradient(circle at 70% 30%, rgba(255,255,255,0.1) 0%, transparent 50%)
@@ -239,7 +486,7 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
       >
         <div className="text-center max-w-2xl relative">
           {/* Result-based decorative elements */}
-          {score >= 300 ? (
+          {score >= 200 ? (
             <>
               <div className="absolute -top-8 -left-8 text-4xl animate-bounce">🏆</div>
               <div className="absolute -top-6 -right-10 text-3xl animate-pulse">⭐</div>
@@ -258,10 +505,10 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
           {/* Main Result */}
           <div className="mb-6">
             <div className="text-6xl mb-4">
-              {score >= 300 ? '🛡️' : '⏰'}
+              {score >= 200 ? '🛡️' : '⏰'}
             </div>
             <h1 className="text-4xl font-bold mb-4 text-yellow-300">
-              {score >= 300 ? '🎉 MISSION ACCOMPLISHED!' : '⏰ TIME EXPIRED!'}
+              {score >= 200 ? '🎉 MISSION ACCOMPLISHED!' : '⏰ TIME EXPIRED!'}
             </h1>
             <div className="text-xl text-gray-200 mb-2">THREAT ANALYSIS COMPLETE</div>
           </div>
@@ -272,13 +519,13 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
             <div className="text-8xl font-bold text-yellow-400 mb-4">{score}</div>
             
             <div className={`text-lg mb-4 p-4 rounded-lg ${
-              score >= 300 
-                ? 'bg-green-800 bg-opacity-50 text-green-200 border border-green-400' 
-                : 'bg-red-800 bg-opacity-50 text-red-200 border border-red-400'
+              score >= 200 
+                ? 'bg-blue-800 bg-opacity-50 text-blue-200 border border-blue-400' 
+                : 'bg-gray-800 bg-opacity-50 text-gray-200 border border-gray-400'
             }`}>
-              {score >= 300 ? (
+              {score >= 200 ? (
                 <>
-                  <div className="text-2xl mb-2">� SECURITY EXPERT CERTIFIED!</div>
+                  <div className="text-2xl mb-2">SECURITY EXPERT CERTIFIED!</div>
                   <div>Outstanding fraud detection skills! You've successfully protected the system from cyber threats.</div>
                 </>
               ) : (
@@ -292,13 +539,13 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
             <div className="text-sm text-gray-400 border-t border-gray-600 pt-4">
               <div className="flex justify-center gap-8">
                 <div>🎯 Accuracy: {score > 0 ? Math.min(100, Math.round(score / 10)) : 0}%</div>
-                <div>⚡ Threat Level: {score >= 300 ? 'CONTAINED' : 'ACTIVE'}</div>
+                <div>⚡ Threat Level: {score >= 200 ? 'CONTAINED' : 'ACTIVE'}</div>
               </div>
             </div>
           </div>
           
           <div className="text-sm text-yellow-300 bg-gray-900 bg-opacity-50 p-4 rounded-lg border border-yellow-600">
-            �️ <span className="font-bold">Agent {dogName}</span> has completed cyber security training and is now better equipped to detect digital threats!
+            <span className="font-bold">Agent {dogName}</span> has completed cyber security training and is now better equipped to detect digital threats!
           </div>
         </div>
       </div>
@@ -332,19 +579,30 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
               <span className="font-bold text-3xl text-yellow-400 ml-2">{score}</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            {/* Audio Toggle */}
+            <button
+              onClick={toggleAudio}
+              className={`p-2 rounded-lg border-2 transition-all ${
+                audioEnabled 
+                  ? 'bg-blue-600 border-blue-400 text-white hover:bg-blue-700' 
+                  : 'bg-gray-600 border-gray-400 text-gray-300 hover:bg-gray-700'
+              }`}
+              title={audioEnabled ? 'Mute Audio' : 'Enable Audio'}
+            >
+              <span className="text-xl">{audioEnabled ? '🔊' : '🔇'}</span>
+            </button>
+            
             <div className="text-red-400 text-2xl">⏱️</div>
             <div>
               <span className="text-gray-400 text-lg">THREAT TIMER:</span>
-              <span className={`font-bold text-3xl ml-2 ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-green-400'}`}>
+              <span className={`font-bold text-3xl ml-2 ${timeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>
                 {timeLeft}s
               </span>
             </div>
-          </div>
+            </div>
         </div>
-      </div>
-
-      {/* Conveyor Belt Area - Cyber Security Command Center */}
+      </div>      {/* Conveyor Belt Area - Cyber Security Command Center */}
       <div className="flex-1 w-full relative overflow-hidden border-t-4 border-red-500 border-b-4 border-red-500" 
            style={{ background: 'linear-gradient(to bottom, #2a2a2a, #1a1a1a)' }}>
         
@@ -376,27 +634,34 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
             key={item.id}
             draggable
             onDragStart={(e) => handleDragStart(e, item)}
-            className={`absolute w-64 p-4 rounded-lg shadow-2xl font-semibold text-lg text-center cursor-grab active:cursor-grabbing transform hover:scale-105 transition-all duration-200 border-2
-              ${item.isScam 
-                ? 'bg-gradient-to-br from-red-600 to-red-800 text-white border-red-300 shadow-red-500/50' 
-                : 'bg-gradient-to-br from-green-600 to-green-800 text-white border-green-300 shadow-green-500/50'
-              }`}
+            className="absolute w-80 p-6 rounded-xl shadow-2xl cursor-grab active:cursor-grabbing transform hover:scale-110 transition-all duration-300 border-2 bg-gradient-to-br from-slate-700 to-slate-800 text-white border-slate-400 hover:border-blue-400"
             style={{
               left: `${item.x}%`,
               animation: `fallDown ${item.animationDuration}s linear forwards`,
-              top: '-100px',
-              boxShadow: item.isScam 
-                ? '0 0 20px rgba(239, 68, 68, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)' 
-                : '0 0 20px rgba(34, 197, 94, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)'
+              top: '-120px',
+              boxShadow: '0 0 25px rgba(148, 163, 184, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)',
+              minHeight: '120px'
             }}
           >
-            <div className="flex items-center justify-center mb-2">
-              <span className="text-2xl mr-2">{item.isScam ? '🚨' : '✅'}</span>
-              <span className="text-xs font-mono bg-black bg-opacity-30 px-2 py-1 rounded">
-                {item.isScam ? 'THREAT' : 'SECURE'}
+            {/* Header with icon */}
+            <div className="flex items-center justify-center mb-4">
+              <span className="text-3xl mr-3">📧</span>
+              <span className="text-sm font-mono bg-slate-900 bg-opacity-60 px-3 py-1 rounded-full border border-slate-500">
+                MESSAGE
               </span>
             </div>
-            <div className="text-sm leading-tight">{item.text}</div>
+            
+            {/* Message content with better spacing */}
+            <div className="text-center px-2">
+              <div className="text-base leading-relaxed font-medium break-words">
+                {item.text}
+              </div>
+            </div>
+            
+            {/* Drag indicator */}
+            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-slate-400 text-xs">
+              ↕️ Drag to sort
+            </div>
           </div>
         ))}
       </div>
@@ -406,25 +671,25 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
         <div
           onDragOver={handleDragOver}
           onDrop={(e) => handleDropOnBin(e, 'safe')}
-          className="h-48 bg-gradient-to-t from-green-700 to-green-600 border-t-8 border-green-400 flex flex-col justify-center items-center text-white hover:from-green-800 hover:to-green-700 transition-all duration-300 relative group"
-          style={{ boxShadow: '0 0 30px rgba(34, 197, 94, 0.3)' }}
+          className="h-48 bg-gradient-to-t from-blue-700 to-blue-600 border-t-8 border-blue-400 flex flex-col justify-center items-center text-white hover:from-blue-800 hover:to-blue-700 transition-all duration-300 relative group"
+          style={{ boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)' }}
         >
-          <div className="absolute inset-0 bg-green-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           <div className="text-6xl mb-2 animate-pulse">🛡️</div>
           <h2 className="text-3xl font-bold font-mono">SECURE ZONE</h2>
-          <div className="text-sm text-green-200 font-mono">VERIFIED SAFE</div>
+          <div className="text-sm text-blue-200 font-mono">VERIFIED SAFE</div>
         </div>
         
         <div
           onDragOver={handleDragOver}
           onDrop={(e) => handleDropOnBin(e, 'scam')}
-          className="h-48 bg-gradient-to-t from-red-700 to-red-600 border-t-8 border-red-400 flex flex-col justify-center items-center text-white hover:from-red-800 hover:to-red-700 transition-all duration-300 relative group"
-          style={{ boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}
+          className="h-48 bg-gradient-to-t from-gray-700 to-gray-600 border-t-8 border-gray-400 flex flex-col justify-center items-center text-white hover:from-gray-800 hover:to-gray-700 transition-all duration-300 relative group"
+          style={{ boxShadow: '0 0 30px rgba(107, 114, 128, 0.3)' }}
         >
-          <div className="absolute inset-0 bg-red-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+          <div className="absolute inset-0 bg-gray-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
           <div className="text-6xl mb-2 animate-pulse">🚨</div>
           <h2 className="text-3xl font-bold font-mono">THREAT ZONE</h2>
-          <div className="text-sm text-red-200 font-mono">MALICIOUS DETECTED</div>
+          <div className="text-sm text-gray-200 font-mono">MALICIOUS DETECTED</div>
         </div>
       </div>
 
@@ -435,8 +700,8 @@ const ScamScannerGame = ({ onGameComplete, dogName, theme }) => {
         }
         
         @keyframes fallDown {
-          from { top: -100px; }
-          to { top: calc(100vh - 250px); }
+          from { top: -120px; }
+          to { top: calc(100vh - 280px); }
         }
       `}</style>
     </div>

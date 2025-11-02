@@ -150,10 +150,10 @@ const ScamSleuthGame = ({ onGameComplete, dogName, island, theme }) => {
         )}
         {message.flagText && (
           <span 
-            className={`cursor-pointer p-1 rounded border border-red-300 ${
+            className={`cursor-pointer p-1 rounded border border-blue-300 ${
               foundFlags.has(message.flagId) 
-                ? 'bg-red-300 text-red-800 font-semibold' 
-                : 'bg-yellow-100 hover:bg-red-200'
+                ? 'bg-blue-300 text-blue-800 font-semibold' 
+                : 'bg-gray-100 hover:bg-blue-200'
             }`}
             onClick={() => handleFlagClick(message.flagId)}
           >
@@ -202,9 +202,9 @@ const ScamSleuthGame = ({ onGameComplete, dogName, island, theme }) => {
             <h2 className="text-3xl font-bold mb-4 text-purple-300">The Overpayment Trap</h2>
             <div className="text-lg space-y-3 max-w-md mx-auto text-left mb-8 bg-gray-800 p-6 rounded-lg">
               <p>You're about to receive a series of messages.</p>
-              <p>Read them carefully and <strong className="text-red-400">CLICK on the 3 RED FLAGS</strong> before the timer runs out!</p>
-              <p>Find flags for <strong className="text-green-400">+50 points</strong>. Clicking safe text costs <strong className="text-yellow-400">-25 points</strong>.</p>
-              <p>Choose the right action at the end for a <strong className="text-green-400">+200 bonus</strong>!</p>
+              <p>Read them carefully and <strong className="text-blue-400">CLICK on the 3 SUSPICIOUS PHRASES</strong> before the timer runs out!</p>
+              <p>Find flags for <strong className="text-blue-400">+50 points</strong>. Clicking safe text costs <strong className="text-gray-400">-25 points</strong>.</p>
+              <p>Choose the right action at the end for a <strong className="text-blue-400">+200 bonus</strong>!</p>
             </div>
             <button 
               onClick={startGame}
@@ -249,7 +249,7 @@ const ScamSleuthGame = ({ onGameComplete, dogName, island, theme }) => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-grow p-4 overflow-y-auto bg-green-50 flex flex-col space-y-2">
+            <div className="flex-grow p-4 overflow-y-auto bg-blue-50 flex flex-col space-y-2">
               {allMessages.slice(0, currentMessageIndex).map((message, index) => renderMessage(message, index))}
             </div>
 

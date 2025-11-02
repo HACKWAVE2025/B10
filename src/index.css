@@ -26,7 +26,7 @@ code {
 }
 
 .scenario-card {
-  @apply bg-white rounded-lg shadow-lg border-2 border-transparent hover:border-primary-500 transition-all duration-300;
+  @apply bg-white rounded-lg shadow-lg border-2 border-transparent hover:border-blue-500 transition-all duration-300;
 }
 
 .choice-button {
@@ -34,9 +34,40 @@ code {
 }
 
 .safe-choice {
-  @apply bg-success text-white hover:bg-green-600;
+  @apply bg-green-500 text-white hover:bg-green-600;
 }
 
 .unsafe-choice {
-  @apply bg-danger text-white hover:bg-red-600;
+  @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+/* Badge animations */
+@keyframes rainbow-glow {
+  0% { filter: hue-rotate(0deg) drop-shadow(0 0 20px currentColor); }
+  25% { filter: hue-rotate(90deg) drop-shadow(0 0 25px currentColor); }
+  50% { filter: hue-rotate(180deg) drop-shadow(0 0 30px currentColor); }
+  75% { filter: hue-rotate(270deg) drop-shadow(0 0 25px currentColor); }
+  100% { filter: hue-rotate(360deg) drop-shadow(0 0 20px currentColor); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.badge-rainbow {
+  animation: rainbow-glow 3s ease-in-out infinite;
+}
+
+.badge-float {
+  animation: float 2s ease-in-out infinite;
+}
+
+.badge-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
 }

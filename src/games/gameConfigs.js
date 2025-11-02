@@ -5,8 +5,12 @@ import WhatsAppDashGame from '../components/games/WhatsAppDashGame';
 import WhatsAppRunnerGame from '../components/games/WhatsAppRunnerGame';
 import ScamSleuthGame from '../components/games/ScamSleuthGame';
 import CreditStackerGame from '../components/games/CreditStackerGame';
+import ShopSafeGame from '../components/games/ShopSafeGame';
+import FraudDetectiveGame from '../components/games/FraudDetectiveGame';
+import CardMemoryGame from '../components/games/CardMemoryGame';
+import SwipeActionGame from '../components/games/FinalFraudQuiz';
 
-console.log('Game imports:', { ScamScannerGame, ITSecurityDashGame, WhatsAppDashGame, WhatsAppRunnerGame, ScamSleuthGame, CreditStackerGame });
+console.log('Game imports:', { ScamScannerGame, ITSecurityDashGame, WhatsAppDashGame, WhatsAppRunnerGame, ScamSleuthGame, CreditStackerGame, ShopSafeGame, FraudDetectiveGame, CardMemoryGame, SwipeActionGame });
 
 // Game configurations for 10 islands (Island 1, 2 & 3 implemented)
 export const gameConfigs = {
@@ -81,11 +85,65 @@ export const gameConfigs = {
     description: "Build your credit score by stacking good financial habits! Avoid predatory loans that will damage your credit!",
     theme: "among-us-cyan",
     instructions: [
-      "� ↑ Arrow or Space = Keep/Drop the block",
+      "🎮 ↑ Arrow or Space = Keep/Drop the block",
       "🗑️ ↓ Arrow = Discard/Skip the block",
       "💚 Stack green 'good habit' blocks for points",
       "🚫 Discard red 'instant loan' trap blocks (+25 bonus)",
       "⚡ Speed increases as your tower grows higher!"
+    ]
+  },
+  island7: {
+    component: ShopSafeGame,
+    title: "🛒 Shop Safe: Domain Defender",
+    description: "Navigate the world of online shopping! Catch legitimate websites while avoiding dangerous fake domains!",
+    theme: "among-us-lime",
+    instructions: [
+      "⬅️➡️ Use Arrow Keys to move your shopping cart",
+      "✅ Catch banners from verified/legitimate websites",
+      "⚠️ Avoid fake domain banners at all costs",
+      "💀 Fake sites give you a virus and cost lives",
+      "🎯 Always check domains before you click!"
+    ]
+  },
+  island8: {
+    component: FraudDetectiveGame,
+    title: "🔍 Fraud Detective: Investigation Unit",
+    description: "Final challenge! Become a fraud detective and investigate suspicious transactions by analyzing evidence and solving cases!",
+    theme: "among-us-cyan",
+    instructions: [
+      "🕵️ Investigate 3 different fraud cases as a detective",
+      "🔍 Click on evidence you think is suspicious or unusual",
+      "💡 Look for timing, location, amount, and pattern anomalies",
+      "⚖️ Submit your findings to see if you caught the fraud",
+      "🎯 Score 120+ points by solving cases accurately to pass!"
+    ]
+  },
+  island9: {
+    component: CardMemoryGame,
+    title: "🃏 Memory Detective: Card Training",
+    description: "Test your memory skills! Match pairs of security cards while learning to recognize safe vs fraud patterns in this interactive challenge!",
+    theme: "among-us-lime",
+    instructions: [
+      "🧠 Match pairs of cards by flipping them two at a time",
+      "🔒 Remember card positions to make matches efficiently",
+      "⚡ Safe cards (20 pts) and Fraud cards (30 pts) have different values",
+      "🎯 Complete 3 levels with increasing difficulty",
+      "⏰ 90 seconds to complete all levels, +30s bonus per level",
+      "💡 Hint button available once per level (briefly shows all cards)"
+    ]
+  },
+  island10: {
+    component: SwipeActionGame,
+    title: "🧠 Final Fraud Prevention Quiz",
+    description: "The ultimate test! Complete a comprehensive quiz covering all 9 training islands to earn your fraud prevention certification!",
+    theme: "among-us-purple",
+    instructions: [
+      "📚 Comprehensive review of all 9 training islands",
+      "❓ 10 multiple choice questions covering key concepts",
+      "⏱️ 5 minutes total to complete the entire quiz",
+      "🎯 70% score required to pass final certification",
+      "💡 Explanations provided for each question after answering",
+      "🏆 Earn your badge as a certified fraud prevention expert!"
     ]
   }
 };
@@ -117,7 +175,7 @@ export const themes = {
     primary: '#F07613',
     secondary: '#FFEB3B',
     background: '#1A1508', 
-    text: '#000000',
+    text: '#ffffff',
     accent: '#FFC107'
   },
   'among-us-orange': {
@@ -138,7 +196,7 @@ export const themes = {
     primary: '#6B2FBB',
     secondary: '#9C27B0',
     background: '#130A1A',
-    text: '#ffffff',
+    text: 'white',
     accent: '#E1BEE7'
   },
   'among-us-brown': {
@@ -152,14 +210,14 @@ export const themes = {
     primary: '#38FFDD',
     secondary: '#00BCD4',
     background: '#0A1A1A',
-    text: '#000000',
+    text: '#ffffff',
     accent: '#4DD0E1'
   },
   'among-us-lime': {
     primary: '#50EF39',
     secondary: '#8BC34A',
     background: '#0F1A0A',
-    text: '#000000', 
+    text: '#ffffff', 
     accent: '#CDDC39'
   }
 };

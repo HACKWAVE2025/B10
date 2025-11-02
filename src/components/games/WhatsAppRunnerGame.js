@@ -18,7 +18,7 @@ const WhatsAppRunnerGame = ({ onGameComplete, dogName, island, theme }) => {
   
   // Game state
   const gameStateRef = useRef({
-    gameSpeed: 4, // Increased back to faster speed
+    gameSpeed: 2, // Decreased speed for easier gameplay
     spawnTimer: 0,
     spawnInterval: 150, // Reduced interval for faster gameplay but still reasonable
     player: {
@@ -46,7 +46,7 @@ const WhatsAppRunnerGame = ({ onGameComplete, dogName, island, theme }) => {
     
     // Reset game state
     gameStateRef.current = {
-      gameSpeed: 4, // Increased back to faster speed
+      gameSpeed: 2, // Decreased speed for easier gameplay
       spawnTimer: 0,
       spawnInterval: 150, // Reduced interval for faster gameplay but still reasonable
       player: {
@@ -123,41 +123,41 @@ const WhatsAppRunnerGame = ({ onGameComplete, dogName, island, theme }) => {
     
     // Increase difficulty more gradually
     if (score > 0 && score % 800 === 0) { // Reduced from 1000 to 800 for faster progression
-      state.gameSpeed = Math.min(7, state.gameSpeed + 0.15); // Increased max speed to 7, slightly larger increments
+      state.gameSpeed = Math.min(4, state.gameSpeed + 0.1); // Reduced max speed to 4, smaller increments
       state.spawnInterval = Math.max(100, state.spawnInterval - 2); // Smaller decrease rate
     }
 
     const entityType = Math.random();
     
     if (entityType < 0.35) { // Reduced from 0.4 to 0.35 - fewer red obstacles
-      // Spawn obstacle (jump) - made much smaller and easier to dodge
+      // Spawn obstacle (jump) - made smaller and more constrained
       state.obstacles.push({
         x: canvas.width + 50,
         y: GROUND_Y - 30, // Reduced height even more
-        width: 80, // Reduced width from 100 to 80
-        height: 30, // Reduced height from 35 to 30
+        width: 60, // Further reduced width from 80 to 60 for less clutter
+        height: 25, // Further reduced height from 30 to 25
         type: 'spam',
         text: SPAM_MESSAGES[Math.floor(Math.random() * SPAM_MESSAGES.length)],
-        color: '#e53e3e'
+        color: '#6B7280' // Neutral gray-blue color for all boxes
       });
     } else if (entityType < 0.55) { // Reduced from 0.6 to 0.55 - fewer orange obstacles
-      // Spawn obstacle (slide) - made much smaller and easier to dodge
+      // Spawn obstacle (slide) - made smaller and more constrained
       state.obstacles.push({
         x: canvas.width + 50,
         y: GROUND_Y - 100, // Raised even higher to make sliding much easier
-        width: 80, // Reduced width from 100 to 80
-        height: 40, // Reduced height from 50 to 40
+        width: 60, // Further reduced width from 80 to 60 for less clutter
+        height: 30, // Further reduced height from 40 to 30
         type: 'popup',
         text: POPUP_MESSAGES[Math.floor(Math.random() * POPUP_MESSAGES.length)],
-        color: '#dd6b20'
+        color: '#6B7280' // Neutral gray-blue color for all boxes
       });
     } else {
-      // Spawn collectible - made larger for better readability
+      // Spawn collectible - made more compact and clean
       state.collectibles.push({
         x: canvas.width + 50,
         y: GROUND_Y - 90, // Adjusted position
-        width: 120, // Increased width from 100 to 120
-        height: 45, // Increased height from 35 to 45
+        width: 90, // Reduced width from 120 to 90 for less clutter
+        height: 35, // Reduced height from 45 to 35
         type: 'safe',
         text: SAFE_MESSAGES[Math.floor(Math.random() * SAFE_MESSAGES.length)]
       });
@@ -280,7 +280,7 @@ const WhatsAppRunnerGame = ({ onGameComplete, dogName, island, theme }) => {
       ctx.fill();
       
       ctx.fillStyle = 'white';
-      ctx.font = '600 20px Arial'; // Increased from 16px to 20px
+      ctx.font = '600 12px Arial'; // Reduced from 20px to 12px for smaller text
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(obs.text, obs.x + obs.width / 2, obs.y + obs.height / 2);
@@ -288,13 +288,13 @@ const WhatsAppRunnerGame = ({ onGameComplete, dogName, island, theme }) => {
     
     // Draw collectibles
     state.collectibles.forEach(col => {
-      ctx.fillStyle = '#38a169';
+      ctx.fillStyle = '#6B7280'; // Same neutral gray-blue color as obstacles
       ctx.beginPath();
       ctx.roundRect(col.x, col.y, col.width, col.height, 10);
       ctx.fill();
       
       ctx.fillStyle = 'white';
-      ctx.font = '600 18px Arial'; // Increased from 14px to 18px
+      ctx.font = '600 10px Arial'; // Reduced from 18px to 10px for smaller text
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(col.text, col.x + col.width / 2, col.y + col.height / 2);

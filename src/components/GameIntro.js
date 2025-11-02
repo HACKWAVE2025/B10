@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 
-function GameIntro({ onStartGame, onStartIslandMode }) {
+function GameIntro({ onStartGame }) {
   const [dogName, setDogName] = useState('');
   const [showStory, setShowStory] = useState(false);
 
   const handleStartGame = () => {
     if (dogName.trim()) {
       onStartGame(dogName.trim());
-    }
-  };
-
-  const handleStartIslandMode = () => {
-    if (dogName.trim()) {
-      onStartIslandMode(dogName.trim());
     }
   };
 
@@ -37,12 +31,12 @@ function GameIntro({ onStartGame, onStartIslandMode }) {
               With your guidance, this furry friend could become the ultimate cyber security companion.
             </p>
             <p>
-              🎯 Your mission: Train your new companion to detect and bark at 10 different types of 
-              digital payment frauds across 5 mysterious islands. Each island holds new challenges!
+              🎯 Your mission: Train your new companion to detect 10 different types of 
+              digital payment frauds. Each game will teach both you and your dog new skills!
             </p>
             <p>
-              ⭐ As you progress, your dog will evolve and grow stronger. After mastering all levels, 
-              your trained guardian will protect you from real cyber threats!
+              ⭐ As you progress, your dog will evolve and grow stronger. Complete all games to earn badges
+              and become a Master Detective team!
             </p>
           </div>
 
@@ -81,20 +75,11 @@ function GameIntro({ onStartGame, onStartIslandMode }) {
                 disabled={!dogName.trim()}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-green-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                📚 Start Story Mode {dogName && `${dogName}!`} 🚀
-              </button>
-              
-              <button
-                onClick={handleStartIslandMode}
-                disabled={!dogName.trim()}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-purple-600 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                🏝️ Island Training Mode {dogName && `${dogName}!`} ⚡
+                 Start Fraud Detection Training {dogName && `with ${dogName}!`}
               </button>
               
               <div className="text-center text-sm text-gray-600 mt-2">
-                <p className="mb-1">🎯 <strong>Story Mode:</strong> Progressive levels with story</p>
-                <p>🏝️ <strong>Island Mode:</strong> Free access to all islands (Development)</p>
+                <p>🎯 Complete all 10 games and earn badges to become a Master Detective!</p>
               </div>
             </div>
           </div>
@@ -112,8 +97,7 @@ function GameIntro({ onStartGame, onStartIslandMode }) {
             Welcome to Fraud Detection Academy!
           </h2>
           <p className="text-xl text-gray-600 leading-relaxed">
-            Embark on an adventure to train your digital companion in detecting cyber frauds. 
-            Journey through 5 islands, master 10 scenarios, and become a fraud-fighting duo!
+            Train your digital companion to detect cyber frauds! Complete all 10 games to earn badges and become a Master Detective.
           </p>
         </div>
 
@@ -122,19 +106,19 @@ function GameIntro({ onStartGame, onStartIslandMode }) {
             onClick={() => setShowStory(true)}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg text-xl font-bold hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200"
           >
-            🌟 Begin Your Journey
+            🌟 Begin Training
           </button>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-3xl mb-2">🏝️</div>
-              <h3 className="font-semibold text-blue-800">5 Islands</h3>
-              <p className="text-sm text-blue-600">Each with unique fraud scenarios</p>
+              <div className="text-3xl mb-2">�</div>
+              <h3 className="font-semibold text-blue-800">10 Games</h3>
+              <p className="text-sm text-blue-600">Interactive fraud detection challenges</p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-3xl mb-2">🎯</div>
-              <h3 className="font-semibold text-green-800">10 Levels</h3>
-              <p className="text-sm text-green-600">Real-world fraud examples</p>
+              <div className="text-3xl mb-2">�</div>
+              <h3 className="font-semibold text-green-800">Earn Badges</h3>
+              <p className="text-sm text-green-600">Collect unique badges for each game</p>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
               <div className="text-3xl mb-2">📱</div>
@@ -142,9 +126,9 @@ function GameIntro({ onStartGame, onStartIslandMode }) {
               <p className="text-sm text-purple-600">Play anywhere, anytime</p>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-3xl mb-2">🏆</div>
-              <h3 className="font-semibold text-yellow-800">Leaderboard</h3>
-              <p className="text-sm text-yellow-600">Compete with others</p>
+              <div className="text-3xl mb-2">🔍</div>
+              <h3 className="font-semibold text-yellow-800">Real Scenarios</h3>
+              <p className="text-sm text-yellow-600">Learn from actual fraud cases</p>
             </div>
           </div>
         </div>
